@@ -15,7 +15,6 @@ tract_count <- data.frame(geoid=tracts$GEOID10,
 
 tract_cover <- read.csv("tract_coverage.csv")
 
-
 tract_population <- read.csv("acs2012_5yr_B01001_14000US17031810400.csv")
 tract_population$geoid <- str_split_fixed(tract_population$geoid, "US", 2)[, 2]
 
@@ -27,13 +26,26 @@ tract_data <- merge(tract_count, tract_cover, by="geoid")
 tract_data <- merge(tract_data, over_18, by="geoid")
 
 tract_data <- tract_data[-c(517, 683, 755, 160),]
-tract_data <- tract_data[tract_data$over_18 > 0,]
+tract_data <- tract_data[tract_data$over_18 > 0 & tract_data$calls > 0,]
 
-plot(log(calls) ~ I(log(canopy_coverage * over_18)), data=tract_data)
+plot(log(calls) ~ I(log(percent_covered * over_18)), data=tract_data)
 
-model <- glm(calls ~ 1, data=tract_data, family="poisson")
+model <- glm(calls ~ 1, offset=I(log(percent_covered * over_18)), data=tract_data, family="poisson")
 
-# Note that these are deviance residuals
-write.csv(data.frame(geoid=tract_data$geoid, resid=-resid(model)),
+base_rateXexpression = exp(log(tract_data$calls)
+                          - log(tract_data$over_18)
+                          - log(tract_data$percent_covered))
+
+# assuming that tract_level expressiveness is log normal
+tree_debris_rate = exp(mean(log(base_rateXexpression)))
+
+expression = base_rateXexpression/tree_debris_rate
+
+# Note that these are deviance residuals http://people.bath.ac.uk/sw283/mgcv/tampere/glm.pdf
+write.csv(data.frame(geoid=tract_data$geoid, resid=log(expression)),
           file = "resid.csv",
+          row.names = FALSE)
+
+write.csv(data.frame(geoid=tract_data$geoid, calls=tract_data$calls),
+          file = "calls.csv",
           row.names = FALSE)
