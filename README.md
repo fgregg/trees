@@ -6,7 +6,9 @@ Estimating 311 Engagement with Trees
 Setting up db
 ```bash
 shp2pgsql -I -s 4326 -d ~/Downloads/chicago-tree-data/citywide_canopy.shp canopy | psql
-shp2pgsql -I -s 4326 -d ~/Downloads/chicago-tree-data/citywide_canopy.shp canopy | psql
+
+ogr2ogr -s_srs EPSG:3435 -t_srs EPSG:4326  -f "ESRI Shapefile" wgs84.shp CensusTractsTIGER2010.shp
+shp2pgsql -I -s 4326 -d wgs84.shp CensusTractsTIGER2010 | psql
 ```
 
 Creating tract coverage 
