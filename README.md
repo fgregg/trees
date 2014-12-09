@@ -15,7 +15,7 @@ ogr2ogr -s_srs EPSG:3435 -t_srs EPSG:4326  -f "ESRI Shapefile" blocks.shp Census
 gr2ogr -f 'ESRI Shapefile' zoning.shp Zoning_Nov2012.kmz 
 ogr2ogr -s_srs EPSG:3435 -t_srs EPSG:4326  -f "ESRI Shapefile" zoning.shp Zoning_nov2012.shp
 
-ogr2ogr -f "PostgreSQL" -lco GEOMETRY_NAME=geom -lco FID=gid PG:"host=localhost dbname=fgregg password=buddah" 311_Service_Requests_-_Tree_Debris.vrt -nln requests
+ogr2ogr -f "PostgreSQL" -lco GEOMETRY_NAME=geom -lco FID=gid PG:"host=localhost dbname=DBNAME password=PASSWORD" 311_Service_Requests_-_Tree_Debris.vrt -nln requests
 ALTER TABLE requests ALTER COLUMN "completion date" TYPE DATE USING to_date(NULLIF("completion date", ''), 'MM/DD/YYYY');
 ALTER TABLE requests ALTER COLUMN "creation date" TYPE DATE USING to_date(NULLIF("creation date", ''), 'MM/DD/YYYY');
 
