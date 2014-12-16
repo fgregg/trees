@@ -6,6 +6,10 @@ SHELL := bash
 .SUFFIXES:
 
 ### Download files
+.INTERMEDIATE : under_18.zip
+under_18.zip :
+	wget -O $@ "http://api.censusreporter.org/1.0/data/download/latest?table_ids=B09001&geo_ids=16000US1714000,140|16000US1714000&format=csv"
+
 .INTERMEDIATE : poverty_status.zip
 poverty_status.zip : 
 	wget -O $@ "http://api.censusreporter.org/1.0/data/download/latest?table_ids=B17001&geo_ids=16000US1714000,140|16000US1714000&format=csv"
@@ -94,11 +98,17 @@ home_ownership.csv : tenure.csv
 	csvcut -c '1,3,5'\
 		$^ > $@
 
+.INTERMEDIATE : children.csv under_18.csv
+children.csv : under_18.csv
+	csvcut -c '1,3'\
+		$^ > $@ 
+
 ### Join Tables
 all_measures.csv : below_poverty.csv on_public_assistance.csv\
 		   single_mother.csv unemployed.csv black.csv latino.csv\
-                   foreign_born.csv one_year_mobility.csv home_ownership.csv
+                   foreign_born.csv one_year_mobility.csv home_ownership.csv\
+		   children.csv
 	csvjoin -c "geoid" $^ |\
-	csvcut -C 4,7,10,13,16,19,22,25 > $@
+	csvcut -C 4,7,10,13,16,19,22,25,28 > $@
 
 

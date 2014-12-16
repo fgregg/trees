@@ -8,31 +8,6 @@ con <- dbConnect(drv, dbname='fgregg')
 
 storm_days <- read.csv("storms.csv", header=FALSE)
 
-requests <- dbGetQuery(con,
-    paste("
-          SELECT geoid10, COALESCE(all_count.cnt, 0) AS call_count
-          FROM populated_tract LEFT JOIN 
-          (SELECT geoid10, COUNT(*) AS cnt
-           FROM requests, populated_tract
-           WHERE ST_INTERSECTS(requests.geom, populated_tract.geom)
-           AND \"creation date\" IN ('",
-           paste(storm_days[,1], sep="", collapse="', '"),
-           "')
-           GROUP BY geoid10)
-          AS all_count USING (geoid10)"
-          , sep=""))
-
-requests <- dbGetQuery(con,
-    paste("
-          SELECT geoid10, COALESCE(all_count.cnt, 0) AS call_count
-          FROM populated_tract LEFT JOIN 
-          (SELECT geoid10, COUNT(*) AS cnt
-           FROM requests, populated_tract
-           WHERE ST_INTERSECTS(requests.geom, populated_tract.geom)
-           GROUP BY geoid10)
-          AS all_count USING (geoid10)"
-          , sep=""))
-
 trim_requests <- dbGetQuery(con,
     paste("
           SELECT geoid10, COALESCE(all_count.cnt, 0) AS trim_call
@@ -43,17 +18,6 @@ trim_requests <- dbGetQuery(con,
            AND \"creation date\" IN ('",
            paste(storm_days[,1], sep="", collapse="', '"),
            "')
-           GROUP BY geoid10)
-          AS all_count USING (geoid10)"
-          , sep=""))
-
-trim_requests <- dbGetQuery(con,
-    paste("
-          SELECT geoid10, COALESCE(all_count.cnt, 0) AS trim_call
-          FROM populated_tract LEFT JOIN 
-          (SELECT geoid10, COUNT(*) AS cnt
-           FROM trim_requests, populated_tract
-           WHERE ST_INTERSECTS(trim_requests.geom, populated_tract.geom)
            GROUP BY geoid10)
           AS all_count USING (geoid10)"
           , sep=""))
@@ -79,27 +43,19 @@ over_18 <- (tract_population[, 3]
             - rowSums(tract_population[, c(7,9,11,13,55,57,59,61)]))
 over_18 <- data.frame(geoid10=tract_population$geoid, over_18=over_18)
 
-tract <- merge(requests, populated_canopy_area, by="geoid10")
-tract <- merge(tract, trim_requests, by="geoid10")
+tract <- merge(trim_requests, populated_canopy_area, by="geoid10")
 tract <- merge(tract, populated_tract_area, by="geoid10")
 tract <- merge(tract, over_18, by="geoid10")
 
 tract$percent_covered <- tract$canopy_area/tract$tract_area
 
-plot(log(call_count) ~ log(canopy_area),
+plot(log(trim_call) ~ log(canopy_area),
      data=tract,
      ylim=c(0, 8),
      xlim=c(6, 14))
 abline(-6.6, 1, col="red")
 
-plot(I(log(call_count) - log(canopy_area)) ~ log(over_18), data=tract)
-
-model <- glm(call_count ~ log(over_18), offset=log(canopy_area),
-             data=tract, family="poisson")
-
-model <- glm(call_count ~ log(over_18) + log(trim_call), offset=log(canopy_area),
-             data=tract[tract$trim_call > 0,], family="poisson")
-
+plot(I(log(trim_call) - log(canopy_area)) ~ log(over_18), data=tract)
 
 model <- glm(trim_call ~ log(over_18), offset=log(canopy_area),
              data=tract, family="poisson")
@@ -108,7 +64,8 @@ model <- glm(trim_call ~ log(over_18), offset=log(canopy_area),
 
 
 
-base_rateXexpression = exp(log(tract$call_count)
+
+base_rateXexpression = exp(log(tract$trim_call)
                           - log(tract$over_18)
                           - log(tract$percent_covered))
 
@@ -121,11 +78,11 @@ expression = base_rateXexpression/tree_debris_rate
 write.csv(data.frame(geoid10=tract$geoid,
                      resid=resid(model),
                      expression=log(expression),
-                     callsXtree = tract$call_count/tract$canopy_area,
+                     callsXtree = tract$trim_call/tract$canopy_area,
                      covered=tract$percent_covered),
           file = "resid.csv",
           row.names = FALSE)
 
-write.csv(data.frame(geoid=tract$geoid, calls=tract$call_count),
+write.csv(data.frame(geoid=tract$geoid, calls=tract$trim_call),
           file = "calls.csv",
           row.names = FALSE)
