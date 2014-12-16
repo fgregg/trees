@@ -44,7 +44,7 @@ tenure.zip :
 
 ### Extract CSVs from zips
 %.csv : %.zip 
-	unzip -cq $(basename $@).zip "*.csv" > $(basename $@).csv
+	unzip -cq $< "*.csv" > $@
 
 ### Dice out necessary columns
 .INTERMEDIATE : below_poverty.csv poverty_status.csv
