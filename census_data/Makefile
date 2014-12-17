@@ -6,6 +6,15 @@ SHELL := bash
 .SUFFIXES:
 
 ### Download files
+.INTERMEDIATE : orig_block_population.csv 
+orig_block_population.csv :
+	wget -O $@ "https://data.cityofchicago.org/api/views/5yjb-v3mj/rows.csv?accessType=DOWNLOAD"
+
+.INTERMEDIATE : block_population.csv
+block_population.csv : orig_block_population.csv
+	awk -F , 'NR == 1 {print} NR > 1 { printf "%010i,%i\n" , $$1 , $$2 }' \
+		$< > $@
+
 .INTERMEDIATE : under_18.zip
 under_18.zip :
 	wget -O $@ "http://api.censusreporter.org/1.0/data/download/latest?table_ids=B09001&geo_ids=16000US1714000,140|16000US1714000&format=csv"
@@ -111,4 +120,13 @@ all_measures.csv : below_poverty.csv on_public_assistance.csv\
 	csvjoin -c "geoid" $^ |\
 	csvcut -C 4,7,10,13,16,19,22,25,28 > $@
 
+load_block_pop : block_population.csv
+	psql -c "CREATE TABLE block_pop (tract_bloc CHARACTER(10), pop INTEGER)"
+	psql -c "COPY block_pop FROM '$(realpath $<)' DELIMITER ',' CSV HEADER"
 
+.PHONY : all
+all : all_measures.csv load_block_pop
+
+.PHONY : clean
+clean :
+	psql -c "DROP TABLE block_pop"
