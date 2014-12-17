@@ -27,6 +27,7 @@ names(scores) <- c("disadvantage", "immigrant", "stability")
 scores$geoid10 <- census$geoid10
 
 expressiveness <- read.csv("resid.csv")
+expressiveness$expressiveness <- scale(expressiveness$resid)
 
 homicides <- dbGetQuery(con,
     paste("
@@ -51,7 +52,7 @@ model1 <- glm(homicide_count ~ (disadvantage + immigrant
                                 
 model2 <- glm(homicide_count ~ (in_poverty + public_assistance + single_mother
                                 + unemployed + black + hispanic + foreign_born
-                                + same_house + I(scale(resid))
+                                + same_house + expressiveness
                                 + owner_occupied + under_18),
               offset=log(population),
               data=all_data, family="poisson")

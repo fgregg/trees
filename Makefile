@@ -5,13 +5,13 @@ SHELL := bash
 .DELETE_ON_ERROR:
 .SUFFIXES:
 
-shapefiles :
+shapefile :
 	$(MAKE) -C shapefiles
 
-point_data :
+points :
 	$(MAKE) -C point_data
 
-census_data :
+census :
 	$(MAKE) -C census_data
 
 populated_tracts :
@@ -35,4 +35,4 @@ populated_canopy :
 		  FROM populated_tract, canopy \
 		  WHERE ST_INTERSECTS(populated_tract.geom, canopy.geom))" 
 
-all : shapefiles point_data census_data populated_tracts populated_canopy
+all : shapefile points census populated_tracts populated_canopy
