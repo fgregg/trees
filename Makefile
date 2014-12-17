@@ -16,16 +16,16 @@ census :
 
 populated_tracts :
 	psql -c "CREATE TABLE populated_tract AS \
-		(SELECT geoid10, \
-			ST_INTERSECTION(tract.geom, bl.merge_geom) AS geom \
-		 FROM tract, \
-		 (SELECT ST_UNION(blocks.geom) AS merge_geom \
-		  FROM blocks, block_pop \
-		  WHERE tract_bloc = tract_bloc \
-                  AND pop > 10 \
-		  GROUP BY blocks.tractce10) \
-		 AS bl \
-		 WHERE ST_INTERSECTS(tract.geom, bl.merge_geom))"
+		 (SELECT geoid10, \
+		 	 ST_INTERSECTION(tracts.geom, bl.merge_geom) AS geom \
+		  FROM tracts, \
+		  (SELECT ST_UNION(blocks.geom) AS merge_geom \
+		   FROM blocks INNER JOIN block_pop \
+		   USING (tract_bloc) \
+                   WHERE pop > 10 \
+		   GROUP BY blocks.tractce10) \
+		  AS bl \
+		  WHERE ST_INTERSECTS(tracts.geom, bl.merge_geom))"
 
 populated_canopy :
 	psql -c "CREATE TABLE populated_canopy AS \
