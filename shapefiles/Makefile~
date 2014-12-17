@@ -1,0 +1,9 @@
+MAKEFLAGS += --warn-undefined-variables
+SHELL := bash
+.SHELLFLAGS := -eu -o pipefail
+.DEFAULT_GOAL := blocks.zip
+.DELETE_ON_ERROR:
+.SUFFIXES:
+
+blocks.zip :
+	wget -O blocks.zip "https://data.cityofchicago.org/api/geospatial/mfzt-js4n?method=export&format=Original"
